@@ -1,0 +1,43 @@
+[build-system]
+requires = [
+    "setuptools==75.3.0",
+    "wheel==0.44.0"
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tubtub"
+version = "0.1.0"
+description = "An AI powered companion to help you improve your marital life"
+authors = [
+    { name = "Islam Elkadi", email = "ielkadi@icloud.com" }
+]
+dependencies = [
+    "cdk-nag==2.30.2",
+    "aws-cdk-lib==2.164.1",
+    "constructs>=10.0.0,<11.0.0",
+    "boto3==1.35.54",
+    "aws-lambda-powertools[tracer,validation]==2.27.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pre-commit==4.0.1",
+    "pyclean==3.0.0",
+    "moto==5.0.19",
+    "pytest==8.3.3",
+    "pytest-xdist==3.6.1",
+    "pytest-cov==6.0.0",
+    "pylint==3.3.1",
+    "black==24.10.0",
+]  # Add any development dependencies here
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v -ra -q -p no:warnings"
+log_cli = true
+log_cli_level = "INFO"
+log_format = "%(asctime)s %(levelname)s %(message)s"
+log_date_format = "%Y-%m-%d %H:%M:%S"
+minversion = "6.0"
+filterwarnings = "ignore"

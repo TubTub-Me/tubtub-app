@@ -1,0 +1,13 @@
+{
+    "general_params":{
+        "app_name": "tubtub",
+        "app_description": "A WhatsApp chatbot that reminds you to hug your partner"
+    },
+    "sqs_params":{
+        "dlq_max_receive_count": 3,
+        "sqs_visibility_timeout_seconds": 300
+    },
+    "reminders_service":{
+        "supported_timezones":[]
+    }
+}
