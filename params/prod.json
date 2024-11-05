@@ -1,5 +1,6 @@
 {
     "general_params":{
+        "env_name": "prod",
         "app_name": "tubtub",
         "app_description": "A WhatsApp chatbot that reminds you to hug your partner"
     },
@@ -8,6 +9,9 @@
         "sqs_visibility_timeout_seconds": 300
     },
     "reminders_service":{
-        "supported_timezones":[]
+        "supported_timezones":[],
+        "notifications_frequency_in_hours": 1,
+        "is_scheduled_reminders_enabled": true,
+        "scheduled_reminders_rule_description": "An hourly scheduled EventBridge rule to trigger a reminders queue hourly"
     }
 }
