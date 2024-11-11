@@ -10,8 +10,13 @@
     },
     "reminders_service":{
         "supported_timezones":[],
-        "notifications_frequency_in_hours": 1,
+        "notifications_frequency_in_minutes": "rate(1 minute)",
         "is_scheduled_reminders_enabled": true,
-        "scheduled_reminders_rule_description": "An hourly scheduled EventBridge rule to trigger a reminders queue hourly"
+        "scheduled_reminders_rule_description": "An hourly scheduled EventBridge rule to trigger a reminders queue hourly",
+        "queue_message_details": {
+            "main_orchestrator": {
+                "orchestrator_type": "main"
+            }
+        }
     }
 }

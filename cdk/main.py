@@ -20,11 +20,11 @@ class ParentStack(cdk.Stack):
         super().__init__(scope, construct_id, **kwargs)
         
         # Nested stack definitions
-        self._sqs_stack = SqsStack(self, "tubtub-sqs", external_params)
-        self._eventbridge_stack = EventBridgeStack(self, "tubtub-eventbridge", external_params)
+        self.sqs = SqsStack(self, "tubtub-sqs", external_params)
+        self.eventbridge = EventBridgeStack(self, "tubtub-eventbridge", external_params, self.sqs)
 
         # Add dependencies
-        self._eventbridge_stack.add_dependency(self._sqs_stack)
+        self.eventbridge.add_dependency(self.sqs)
 
         # Tags
         cdk.Tags.of(self).add("app_name", "TubTub")
