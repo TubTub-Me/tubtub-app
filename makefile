@@ -35,11 +35,3 @@ dev-env:
 	@echo "$(GREEN)Virtual environment now installed with dependencies$(NC)"
 	@echo "$(YELLOW)To use the venv, run '. .venv/bin/activate'$(NC)"
 
-# Compile CDK code
-.PHONY: synth
-synth:
-	@echo "$(GREEN)Activating virtual environment$(NC)"
-	@. .venv/bin/activate
-
-	@echo "$(GREEN)Compiling your CDK code$(NC)"
-	@cdk synth

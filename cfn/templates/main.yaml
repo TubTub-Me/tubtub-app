@@ -1,0 +1,173 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: CFN Template to create and deploy the TubTub app infrastructure
+
+Parameters:
+
+  # General params
+  AppName:
+    Type: String
+    Description: Application's name
+
+  EnvName:
+    Type: String
+    Description: Environment name
+  
+  # ECS params
+  AppContainerImage:
+    Type: String
+    Description: Container repo image name
+
+  TaskDefinitionCpu:
+    Type: Number
+    Description: CPU Size
+    Default: 256
+
+  TaskDefinitionMemory:
+    Type: Number
+    Description: Memory Size
+    Default: 512
+
+  CpuArchitecture:
+    Type: String
+    Description: CPU Architecture of task definition
+    Default: ARM64
+
+  OperatingSystemFamily:
+    Type: String
+    Description: OS of task definition
+    Default: LINUX
+
+  # EventBridge scheduler params
+  NotificationsFrequencyInHours:
+    Type:        String
+    Description: The schedule expression for the notification frequency
+    Default: cron(0 * * * *)
+
+  IsScheduledRemindersEnabled:
+    Type:        String
+    AllowedValues:
+      - true
+      - false
+    Description: Flag to enable or disable scheduled reminders
+
+  ScheduledRemindersRuleDescription:
+    Type:        String
+    Description: Description for the scheduled reminders rule
+
+Resources:
+
+# ---------------------------------------------------------------
+#                            EventBridge
+# ---------------------------------------------------------------
+
+  RemindersMessagesScheduler:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: !Ref ScheduledRemindersRuleDescription
+      State: !Ref IsScheduledRemindersEnabled
+      ScheduleExpression: !Sub ${NotificationsFrequencyInHours}
+      # Max of 5 targets permitted
+      Targets:
+        - Arn: !GetAtt EcsCluster.Arn
+          Id: RemindersCronTask
+          # Input:
+          EcsParameters:
+            TaskDefinitionArn: !GetAtt EcsTaskDefinition.TaskDefinitionArn
+            # NetworkConfiguration:
+            #   SecurityGroups:
+            #     - 
+            #   Subnets:
+            #     - 
+            LaunchType: FARGATE
+            EnableExecuteCommand: true
+
+# ---------------------------------------------------------------
+#                             DynamoDB
+# ---------------------------------------------------------------
+
+  # DynamoDB
+  EndUsersDataTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ${EnvName}_${AppName}_end_user_table
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: PK
+          AttributeType: S
+        - AttributeName: SK
+          AttributeType: S
+      KeySchema:
+        - AttributeName: PK
+          KeyType: HASH
+        - AttributeName: SK
+          KeyType: RANGE
+
+# ---------------------------------------------------------------
+#                               ECS
+# ---------------------------------------------------------------
+
+  # IAM
+  EcsServiceLinkedRole:
+    Type: AWS::IAM::ServiceLinkedRole
+    Properties: 
+      AWSServiceName: ecs.amazonaws.com
+      Description: Role for ECS to manage resources on behalf of the ECS service
+
+  EcsDynamodbReadWritePolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: !Sub ${EnvName}_${AppName}_ecs_dynamodb_read_write_policy
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - dynamodb:Query
+              - dynamodb:UpdateItem
+              - dynamodb:BatchWriteItem
+            Resource: !GetAtt EndUsersDataTable.Arn
+
+  EcsTaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${EnvName}_${AppName}_ecs_task_esecution_role
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - !Ref EcsDynamodbReadWritePolicy
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+
+  # ECS
+  EcsCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Sub ${EnvName}_${AppName}_ecs_cluster
+
+  EcsTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Cpu: !Ref TaskDefinitionCpu
+      Memory: !Ref TaskDefinitionMemory
+      NetworkMode: awsvpc
+      ExecutionRoleArn: !GetAtt EcsTaskExecutionRole.Arn
+      TaskRoleArn: !GetAtt EcsTaskExecutionRole.Arn
+      RequiresCompatibilities:
+        - FARGATE
+      RuntimePlatform:
+        CpuArchitecture: !Ref CpuArchitecture
+        OperatingSystemFamily: !Ref OperatingSystemFamily
+      ContainerDefinitions:
+        - Essential: true
+          Image: !Ref AppContainerImage
+          LogConfiguration: 
+            LogDriver: awslogs
+            Options: 
+              awslogs-group : !Sub /ecs/${EnvName}/${AppName}
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: /cron-task/reminders-service/
+          Name: !Sub ${EnvName}_${AppName}_tubtub_reminders_service
