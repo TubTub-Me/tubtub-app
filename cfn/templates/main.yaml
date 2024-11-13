@@ -38,7 +38,7 @@ Parameters:
     Default: LINUX
 
   # EventBridge scheduler params
-  NotificationsFrequencyInHours:
+  ScheduledRemindersFrequencyInHours:
     Type:        String
     Description: The schedule expression for the notification frequency
     Default: cron(0 * * * *)
@@ -46,8 +46,9 @@ Parameters:
   IsScheduledRemindersEnabled:
     Type:        String
     AllowedValues:
-      - true
-      - false
+      - DISABLED
+      - ENABLED
+    Default: ENABLED
     Description: Flag to enable or disable scheduled reminders
 
   ScheduledRemindersRuleDescription:
@@ -65,7 +66,7 @@ Resources:
     Properties:
       Description: !Ref ScheduledRemindersRuleDescription
       State: !Ref IsScheduledRemindersEnabled
-      ScheduleExpression: !Sub ${NotificationsFrequencyInHours}
+      ScheduleExpression: !Sub ${ScheduledRemindersFrequencyInHours}
       # Max of 5 targets permitted
       Targets:
         - Arn: !GetAtt EcsCluster.Arn
@@ -147,6 +148,14 @@ Resources:
     Type: AWS::ECS::Cluster
     Properties:
       ClusterName: !Sub ${EnvName}_${AppName}_ecs_cluster
+      CapacityProviders:
+        - FARGATE_SPOT
+      DefaultCapacityProviderStrategy:
+        - CapacityProvider: FARGATE_SPOT
+          Weight: 1
+      Configuration:
+        ExecuteCommandConfiguration:
+          Logging: DEFAULT
 
   EcsTaskDefinition:
     Type: AWS::ECS::TaskDefinition

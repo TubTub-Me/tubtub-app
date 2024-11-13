@@ -1,0 +1,42 @@
+[
+    {
+      "ParameterKey": "AppName",
+      "ParameterValue": "tubtub"
+    },
+    {
+      "ParameterKey": "EnvName",
+      "ParameterValue": "prod"
+    },
+    {
+      "ParameterKey": "AppContainerImage",
+      "ParameterValue": ""
+    },
+    {
+        "ParameterKey": "TaskDefinitionCpu",
+        "ParameterValue": 256
+    },
+    {
+        "ParameterKey": "TaskDefinitionMemory",
+        "ParameterValue": 512
+    },
+    {
+        "ParameterKey": "CpuArchitecture",
+        "ParameterValue": "ARM64"
+    },
+    {
+        "ParameterKey": "OperatingSystemFamily",
+        "ParameterValue": "LINUX"
+    },
+    {
+        "ParameterKey": "ScheduledRemindersFrequencyInHours",
+        "ParameterValue": "cron(0 * * * *)"
+    },
+    {
+        "ParameterKey": "IsScheduledRemindersEnabled",
+        "ParameterValue": "ENABLED"
+    },
+    {
+        "ParameterKey": "ScheduledRemindersRuleDescription",
+        "ParameterValue": "A scheduled rule to trigger the scheduled reminders ECS task execution periodically"
+    }
+]
