@@ -12,7 +12,7 @@ RUN cargo build --release
 
 # Final stage - use a minimal base image
 FROM alpine:latest
-RUN apk add --no-cache libgcc openssl=3.3.2-r0
+RUN apk update && apk add --no-cache libgcc openssl
 COPY --from=builder /usr/src/tubtub/target/release/tubtub /usr/local/bin/tubtub
 
 # Ensure the binary is executable
