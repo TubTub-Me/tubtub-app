@@ -9,15 +9,15 @@
     },
     {
       "ParameterKey": "AppContainerImage",
-      "ParameterValue": ""
+      "ParameterValue": "gcr.io/distroless/cc-debian12"
     },
     {
         "ParameterKey": "TaskDefinitionCpu",
-        "ParameterValue": 256
+        "ParameterValue": "256"
     },
     {
         "ParameterKey": "TaskDefinitionMemory",
-        "ParameterValue": 512
+        "ParameterValue": "512"
     },
     {
         "ParameterKey": "CpuArchitecture",
@@ -29,7 +29,7 @@
     },
     {
         "ParameterKey": "ScheduledRemindersFrequencyInHours",
-        "ParameterValue": "cron(0 * * * *)"
+        "ParameterValue": "rate(1 minute)"
     },
     {
         "ParameterKey": "IsScheduledRemindersEnabled",
@@ -38,5 +38,13 @@
     {
         "ParameterKey": "ScheduledRemindersRuleDescription",
         "ParameterValue": "A scheduled rule to trigger the scheduled reminders ECS task execution periodically"
+    },
+    {
+        "ParameterKey": "EcsTaskSecurityGroupIds",
+        "ParameterValue": "sg-02ed2daca983be386"
+    },
+    {
+        "ParameterKey": "EcsTaskSubnetIds",
+        "ParameterValue": "subnet-0addca20359fae8fb,subnet-04a952e5763176e65,subnet-0fe6456f59994020e,subnet-0cedfe4ed82ec1296,subnet-096783204a3f1b07f,subnet-056fe2a4f9150657e"
     }
 ]

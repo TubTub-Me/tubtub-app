@@ -6,3 +6,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+aws-sdk-dynamodb = "1.54.0"
+aws-sdk-pinpoint = "1.51.0"
+current_platform = "0.2.0"

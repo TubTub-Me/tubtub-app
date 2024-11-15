@@ -4,7 +4,7 @@ YELLOW := \033[0;33m
 NC     := \033[0m  # No Color
 
 # Define variables
-STACK_NAME=tubtub-reminders-app
+STACK_NAME=tubtub-app
 
 # Clouformation Packaging
 .PHONY: cfn-package

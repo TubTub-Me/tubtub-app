@@ -18,14 +18,14 @@ Parameters:
     Description: Container repo image name
 
   TaskDefinitionCpu:
-    Type: Number
+    Type: String
     Description: CPU Size
-    Default: 256
+    Default: "256"
 
   TaskDefinitionMemory:
-    Type: Number
+    Type: String
     Description: Memory Size
-    Default: 512
+    Default: "512"
 
   CpuArchitecture:
     Type: String
@@ -39,12 +39,12 @@ Parameters:
 
   # EventBridge scheduler params
   ScheduledRemindersFrequencyInHours:
-    Type:        String
+    Type: String
     Description: The schedule expression for the notification frequency
     Default: cron(0 * * * *)
 
   IsScheduledRemindersEnabled:
-    Type:        String
+    Type: String
     AllowedValues:
       - DISABLED
       - ENABLED
@@ -52,8 +52,17 @@ Parameters:
     Description: Flag to enable or disable scheduled reminders
 
   ScheduledRemindersRuleDescription:
-    Type:        String
+    Type: String
     Description: Description for the scheduled reminders rule
+
+  # VPC params
+  EcsTaskSubnetIds:
+    Type: String
+    Description: Comma separated string of subnet IDs
+  
+  EcsTaskSecurityGroupIds:
+    Type: String
+    Description: Comma separated string of security group IDs
 
 Resources:
 
@@ -61,24 +70,63 @@ Resources:
 #                            EventBridge
 # ---------------------------------------------------------------
 
+  # IAM
+  RemindersMessagesSchedulerPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: !Sub ${EnvName}_${AppName}_reminders_messages_policy
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - ecs:RunTask
+            Resource:
+              - !GetAtt EcsTaskDefinition.TaskDefinitionArn
+              - !Join [ ":", [ !GetAtt EcsTaskDefinition.TaskDefinitionArn, "*" ] ]
+            Condition:
+              ArnLike:
+                "ecs:Cluster": !GetAtt EcsCluster.Arn
+          - Effect: Allow
+            Action:
+              - iam:PassRole
+            Resource: "*"
+            Condition:
+              StringLike:
+                "iam:PassedToService": "ecs-tasks.amazonaws.com"
+
+  RemindersMessagesSchedulerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${EnvName}_${AppName}_reminders_messages_role
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - !Ref RemindersMessagesSchedulerPolicy
+
   RemindersMessagesScheduler:
     Type: AWS::Events::Rule
     Properties:
       Description: !Ref ScheduledRemindersRuleDescription
       State: !Ref IsScheduledRemindersEnabled
-      ScheduleExpression: !Sub ${ScheduledRemindersFrequencyInHours}
+      ScheduleExpression: !Ref ScheduledRemindersFrequencyInHours
       # Max of 5 targets permitted
       Targets:
         - Arn: !GetAtt EcsCluster.Arn
+          RoleArn: !GetAtt RemindersMessagesSchedulerRole.Arn
           Id: RemindersCronTask
           # Input:
           EcsParameters:
             TaskDefinitionArn: !GetAtt EcsTaskDefinition.TaskDefinitionArn
-            # NetworkConfiguration:
-            #   SecurityGroups:
-            #     - 
-            #   Subnets:
-            #     - 
+            NetworkConfiguration:
+              AwsVpcConfiguration:
+                SecurityGroups: !Split [ ",", !Ref EcsTaskSecurityGroupIds ]
+                Subnets: !Split [ ",", !Ref EcsTaskSubnetIds ]
             LaunchType: FARGATE
             EnableExecuteCommand: true
 
@@ -102,18 +150,24 @@ Resources:
           KeyType: HASH
         - AttributeName: SK
           KeyType: RANGE
+      ResourcePolicy:
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Principal:
+                AWS: !GetAtt EcsTaskExecutionRole.Arn
+              Action:
+                - dynamodb:Query
+                - dynamodb:UpdateItem
+                - dynamodb:BatchWriteItem
+              Resource: !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${EnvName}_${AppName}_end_user_table
 
 # ---------------------------------------------------------------
 #                               ECS
 # ---------------------------------------------------------------
 
   # IAM
-  EcsServiceLinkedRole:
-    Type: AWS::IAM::ServiceLinkedRole
-    Properties: 
-      AWSServiceName: ecs.amazonaws.com
-      Description: Role for ECS to manage resources on behalf of the ECS service
-
   EcsDynamodbReadWritePolicy:
     Type: AWS::IAM::ManagedPolicy
     Properties:
@@ -126,7 +180,8 @@ Resources:
               - dynamodb:Query
               - dynamodb:UpdateItem
               - dynamodb:BatchWriteItem
-            Resource: !GetAtt EndUsersDataTable.Arn
+            # Avoided doing !GetAtt EndUsersDataTable.Arn below to avoid circular dependency issues
+            Resource: !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${EnvName}_${AppName}_end_user_table
 
   EcsTaskExecutionRole:
     Type: AWS::IAM::Role
