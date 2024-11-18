@@ -64,6 +64,17 @@ Parameters:
     Type: String
     Description: Comma separated string of security group IDs
 
+  # DynamoDB params
+  PrimaryKeyName:
+    Type: String
+    Description: Name of primary key
+    Default: PK
+
+  SecondaryKeyName:
+    Type: String
+    Description: Name of secondary key
+    Default: SK
+
 Resources:
 
 # ---------------------------------------------------------------
@@ -144,9 +155,9 @@ Resources:
         - AttributeName: SK
           AttributeType: S
       KeySchema:
-        - AttributeName: PK
+        - AttributeName: !Ref PrimaryKeyName
           KeyType: HASH
-        - AttributeName: SK
+        - AttributeName: !Ref SecondaryKeyName
           KeyType: RANGE
       ResourcePolicy:
         PolicyDocument:
@@ -233,3 +244,10 @@ Resources:
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: /cron-task/reminders-service/
           Name: !Sub ${EnvName}_${AppName}_tubtub_reminders_service
+          Environment:
+            - Name: endusers_datatable_name
+              Value: !Ref EndUsersDataTable
+            - Name: endusers_datatable_primary_key_name
+              Value: !Ref PrimaryKeyName
+            - Name: endusers_datatable_secondary_key_name
+              Value: !Ref SecondaryKeyName
