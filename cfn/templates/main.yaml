@@ -115,12 +115,10 @@ Resources:
       Description: !Ref ScheduledRemindersRuleDescription
       State: !Ref IsScheduledRemindersEnabled
       ScheduleExpression: !Ref ScheduledRemindersFrequencyInHours
-      # Max of 5 targets permitted
       Targets:
         - Arn: !GetAtt EcsCluster.Arn
           RoleArn: !GetAtt RemindersMessagesSchedulerRole.Arn
           Id: RemindersCronTask
-          # Input:
           EcsParameters:
             TaskDefinitionArn: !GetAtt EcsTaskDefinition.TaskDefinitionArn
             NetworkConfiguration:
